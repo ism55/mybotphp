@@ -1,54 +1,35 @@
 <?php
 
-require('../vendor/autoload.php');
+$botToken="702425285:AAElSrsa99nOv_aG4ZLE7iJk-x7rh9KAvko";
 
-$app = new Silex\Application();
-$app['debug'] = true;
+$website="api.telegram.org/bot".$botToken;
 
-$dbopts = parse_url(getenv('DATABASE_URL'));
-$app->register(new Csanquer\Silex\PdoServiceProvider\Provider\PDOServiceProvider('pdo'),
-  array(
-   'pdo.server' => array(
-   'driver'   => 'pgsql',
-   'user' => $dbopts["user"],
-   'password' => $dbopts["pass"],
-   'host' => $dbopts["host"],
-   'port' => $dbopts["port"],
-   'dbname' => ltrim($dbopts["path"],'/')
-  )
- )
-);
+$update=file_get_contents('php://input');
 
-// Register the monolog logging service
-$app->register(new Silex\Provider\MonologServiceProvider(), array(
-  'monolog.logfile' => 'php://stderr',
-));
+$update=json_decode($update,TRUE);
 
-// Register view rendering
-$app->register(new Silex\Provider\TwigServiceProvider(), array(
-    'twig.path' => __DIR__.'/views',
-));
+$chatId=$update['message']['chat']['id'];
 
-// Our web handlers
+$chatType=$update['message']['chat']['type'];
 
-$app->get('/', function() use($app) {
-  $app['monolog']->addDebug('logging output.');
-  return $app['twig']->render('index.twig');
-});
+$message=$update['message']['text'];
 
-$app->get('/db/', function() use($app) {
-  $st = $app['pdo']->prepare('SELECT name FROM test_table');
-  $st->execute();
+switch ($message) {
+	case '/ayuda':
+		$response='Mensaje de ayuda';
+		sendMessage($chatId,$response);
+		break;
+	
+	default:
+		# code...
+		break;
+}
 
-  $names = array();
-  while ($row = $st->fetch(PDO::FETCH_ASSOC)) {
-    $app['monolog']->addDebug('Row ' . $row['name']);
-    $names[] = $row;
-  }
+function sendMessage($chatId,$message){
+	$url=$GLOBALS[website].'/sendMessage?chat_id='.$chatId.'&parse_mode=HTML&text='.urlencode($response);
+		file_get_contents($url);
 
-  return $app['twig']->render('database.twig', array(
-    'names' => $names
-  ));
-});
+}
 
-$app->run();
+
+?>
